@@ -7,7 +7,7 @@ const DEFAULT_PLATFORM = process.env.INFERENCE_PLATFORM || 'ollama';
 const OLLAMA_BASE_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'phi3.5';
 const TRITON_BASE_URL = process.env.TRITON_URL || 'http://localhost:8000';
-const TRITON_MODEL = process.env.TRITON_MODEL || 'phi3_financial';
+const TRITON_MODEL = process.env.TRITON_MODEL || 'phi3.5:3.8b';
 const LMSTUDIO_BASE_URL = process.env.LMSTUDIO_URL || 'http://127.0.0.1:1234';
 const LMSTUDIO_MODEL = process.env.LMSTUDIO_MODEL || 'phi-3.5-mini-instruct';
 const CUSTOM_BASE_URL = process.env.CUSTOM_INFERENCE_URL || 'http://localhost:5001';
@@ -94,7 +94,7 @@ const inferWithOllama = async (message, temperature = 0.2) => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OLLAMA_MODEL, // Utilise 'phi3_financial'
+      model: OLLAMA_MODEL, // Utilise 'phi3.5:3.8b'
       messages: [
         { role: 'system', content: 'Tu es un assistant financier précis et utile.' },
         { role: 'user', content: message },

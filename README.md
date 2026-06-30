@@ -1,16 +1,85 @@
-# React + Vite
+# TechCorp AI Chat — Assistant Financier Spécialisé
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## Objectif
+Déploiement d'une interface web de chat connectée à un modèle d'IA spécialisé en finance (**phi3.5:3.8b-Financial**) via le serveur d'inférence **Ollama**.
 
-Currently, two official plugins are available:
+Le frontend React interroge un backend Node.js (`server.js`) qui communique avec Ollama (`http://localhost:11434`).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Structure du projet
 
-## React Compiler
+```
+techcorp-ai-chat/
+├── server.js             # Backend Node.js (Proxy API)
+├── .env                  # Configuration des URLs et modèles
+├── src/
+│   ├── App.jsx           # Entrée frontend
+│   ├── shared/
+│   │   └── ChatbotBase.jsx  # Composant de chat générique (avec réglage température)
+│   ├── ollama_server/
+│   │   ├── Chatbot.jsx   # Implémentation spécifique Ollama
+│   │   └── Modelfile     # Configuration du modèle financier (instructions & paramètres)
+│   └── models/           # Poids du modèle et adaptateurs financiers
+└── README.md
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Installation et Utilisation
 
-## Expanding the Oxlint configuration
+### 1. Préparer l'environnement
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Assurez-vous qu'Ollama est installé sur votre machine.
+
+```bash
+# Installation des dépendances Node.js
+npm install
+
+# Copie du fichier d'exemple si nécessaire
+cp .env.example .env
+```
+
+Vérifiez que le `.env` contient :
+- `OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=phi3.5:3.8b`
+
+### 2. Configurer le modèle spécialisé
+
+Dans le dossier `src/ollama_server/`, créez le modèle personnalisé TechCorp :
+
+```bash
+ollama create phi3.5:3.8b -f Modelfile
+```
+
+### 3. Lancer le backend
+
+```bash
+npm run backend
+```
+Le backend démarrera sur `http://localhost:5000` et affichera l'adresse d'Ollama.
+
+### 4. Lancer le frontend
+
+```bash
+npm run dev
+```
+
+Ouvrez ensuite `http://localhost:5173` pour interagir avec l'assistant.
+
+---
+
+## Fonctionnalités Clés
+
+- **Modèle Spécialisé** : Utilise `phi3.5:3.8b` boosté par des instructions financières spécifiques.
+- **Réglage de Température** : Slider intégré dans l'UI pour ajuster la créativité du modèle (0.2 recommandé pour la précision financière).
+- **Validation métier** : Corrections automatiques des termes techniques (ex: Mortgage -> Hypothécaire).
+
+---
+
+## Validation du fonctionnement
+
+- **Vérification Ollama** : `ollama list` doit afficher `phi3.5:3.8b`.
+- **Vérification Backend** : Le log doit indiquer `Ollama tourne sur l'adresse: http://localhost:11434`.
+- **Vérification Chat** : Les réponses dans l'interface doivent porter le suffixe `(ollama)`.
+
+---
+
+## Challenge IA - TechCorp Industries
+Ce projet a été finalisé dans le cadre du Challenge IA 7h pour répondre à la mission critique de déploiement d'un assistant financier "Production Ready".
