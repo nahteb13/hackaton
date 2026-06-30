@@ -15,6 +15,7 @@ export default function ChatbotBase({
     },
   ]);
   const [input, setInput] = useState('');
+  const [temperature, setTemperature] = useState(0.2);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const messagesEndRef = useRef(null);
@@ -57,7 +58,7 @@ export default function ChatbotBase({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userMessage.text, platform }),
+        body: JSON.stringify({ message: userMessage.text, platform, temperature }),
       });
 
       if (!response.ok) {

@@ -407,9 +407,23 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
   max-width: 1000px;
   margin: 0 auto 16px;
+}
+
+.chatbot-temperature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.chatbot-temperature input[type="range"] {
+  width: 120px;
+  cursor: pointer;
 }
 
 .chatbot-controls label {
