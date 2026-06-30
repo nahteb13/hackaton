@@ -5,6 +5,16 @@ Déploiement d'une interface web de chat connectée à un modèle d'IA spéciali
 
 Le frontend React interroge un backend Node.js (`server.js`) qui communique avec Ollama (`http://localhost:11434`).
 
+## Présentation de l'équipe
+
+Développement Full-Stack : INSA NAKIB Elamine & BERMOND Ethan
+
+Data Science & Engineering : YAKOUBI Al Eddine
+
+Cybersécurité : MIZOURI Rayane
+
+Intelligence Artificielle : BOUCHARD Corentin & MOLINIERES Damien
+
 ## Structure du projet
 
 ```
