@@ -9,7 +9,7 @@ const TRITON_BASE_URL = process.env.TRITON_URL || 'http://localhost:8000';
 const TRITON_MODEL = process.env.TRITON_MODEL || 'phi3_financial';
 const LMSTUDIO_BASE_URL = process.env.LMSTUDIO_URL || 'http://127.0.0.1:1234';
 const LMSTUDIO_MODEL = process.env.LMSTUDIO_MODEL || 'phi-3.5-mini-instruct';
-const CUSTOM_BASE_URL = process.env.CUSTOM_INFERENCE_URL || '';
+const CUSTOM_BASE_URL = process.env.CUSTOM_INFERENCE_URL || 'http://localhost:5001';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 const setCorsHeaders = (res) => {
@@ -244,8 +244,28 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.url === '/' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Backend API OK');
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(
+      JSON.stringify({
+        status: 'ok',
+        defaultPlatform: DEFAULT_PLATFORM,
+        lmstudio: {
+          url: LMSTUDIO_BASE_URL,
+          model: LMSTUDIO_MODEL,
+        },
+        ollama: {
+          url: OLLAMA_BASE_URL,
+          model: OLLAMA_MODEL,
+        },
+        triton: {
+          url: TRITON_BASE_URL,
+          model: TRITON_MODEL,
+        },
+        custom: {
+          url: CUSTOM_BASE_URL,
+        },
+      })
+    );
     return;
   }
 
