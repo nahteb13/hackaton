@@ -9,7 +9,6 @@ export default function ChatbotBase({
   const [messages, setMessages] = useState([
     {
       id: 1,
-      sender: 'IA',
       text: "Bonjour ! Je suis votre nouvel assistant. Comment puis-je vous aider aujourd'hui ?",
       isUser: false,
     },
@@ -43,7 +42,6 @@ export default function ChatbotBase({
 
     const userMessage = {
       id: Date.now(),
-      sender: 'Vous',
       text: trimmedInput,
       isUser: true,
     };
@@ -73,7 +71,6 @@ export default function ChatbotBase({
         ...prev,
         {
           id: Date.now() + 1,
-          sender: 'IA',
           text: `${answer}${source}`,
           isUser: false,
         },
@@ -84,7 +81,6 @@ export default function ChatbotBase({
         ...prev,
         {
           id: Date.now() + 1,
-          sender: 'IA',
           text: 'Impossible de contacter le backend. Vérifiez que votre API est démarrée et que VITE_API_URL est correctement configuré.',
           isUser: false,
         },
