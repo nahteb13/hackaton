@@ -6,7 +6,7 @@ export default function OllamaChatbot() {
       title="Assistant IA - Ollama"
       badge="Ollama"
       platform="ollama"
-      platformLabel="Ollama (http://localhost:11434)"
+      platformLabel="Ollama local (http://localhost:11434)"
     />
   )
 }

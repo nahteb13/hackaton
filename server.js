@@ -1,10 +1,11 @@
+import 'dotenv/config';
 import http from 'node:http';
 
 const PORT = process.env.PORT || 5000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const DEFAULT_PLATFORM = process.env.INFERENCE_PLATFORM || 'lmstudio';
 const OLLAMA_BASE_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'phi3_financial';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'phi3.5';
 const TRITON_BASE_URL = process.env.TRITON_URL || 'http://localhost:8000';
 const TRITON_MODEL = process.env.TRITON_MODEL || 'phi3_financial';
 const LMSTUDIO_BASE_URL = process.env.LMSTUDIO_URL || 'http://127.0.0.1:1234';
