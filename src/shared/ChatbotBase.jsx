@@ -1,11 +1,16 @@
 ﻿import React, { useState, useRef, useEffect } from 'react';
 
-export default function Chatbot() {
+export default function ChatbotBase({
+  title = 'Assistant IA v1.0',
+  badge = 'FictivCorp',
+  platform = 'backend',
+  platformLabel = 'Backend local',
+}) {
   const [messages, setMessages] = useState([
     {
       id: 1,
       sender: 'IA',
-      text: 'Bonjour ! Je suis votre nouvel assistant. Comment puis-je vous aider aujourd\'hui ?',
+      text: "Bonjour ! Je suis votre nouvel assistant. Comment puis-je vous aider aujourd'hui ?",
       isUser: false,
     },
   ]);
@@ -43,7 +48,7 @@ export default function Chatbot() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userMessage.text }),
+        body: JSON.stringify({ message: userMessage.text, platform }),
       });
 
       if (!response.ok) {
@@ -51,19 +56,20 @@ export default function Chatbot() {
       }
 
       const data = await response.json();
-      const answer = data?.reply || data?.message || data?.answer || 'Réponse vide reçue du serveur.';
+      const answer = data?.reply || data?.message || data?.answer || data?.output || 'Réponse vide reçue du serveur.';
+      const source = data?.platform ? ` (${data.platform})` : '';
 
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           sender: 'IA',
-          text: answer,
+          text: `${answer}${source}`,
           isUser: false,
         },
       ]);
     } catch (error) {
-      console.error('Erreur lors de l\'appel API:', error);
+      console.error('Erreur lors de l\'appel API :', error);
       setMessages((prev) => [
         ...prev,
         {
@@ -83,9 +89,9 @@ export default function Chatbot() {
       <header className="chatbot-header">
         <div className="chatbot-title">
           <span className="chatbot-status" aria-hidden="true" />
-          <h1>Assistant IA v1.0</h1>
+          <h1>{title}</h1>
         </div>
-        <span className="chatbot-badge">FictivCorp</span>
+        <span className="chatbot-badge">{badge}</span>
       </header>
 
       <main className="chatbot-messages" aria-live="polite">
@@ -111,16 +117,18 @@ export default function Chatbot() {
       </main>
 
       <footer className="chatbot-footer">
+        <div className="chatbot-hint">Serveur d'inférence : {platformLabel}</div>
         <form onSubmit={handleSubmit} className="chatbot-form">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Écrivez votre message ici..."
+            placeholder="Posez votre question au modèle financier..."
             className="chatbot-input"
             disabled={isLoading}
             autoComplete="off"
             required
+            autoFocus
           />
           <button type="submit" disabled={isLoading} className="chatbot-button">
             Envoyer

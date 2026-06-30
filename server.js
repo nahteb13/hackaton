@@ -2,16 +2,166 @@ import http from 'node:http';
 
 const PORT = process.env.PORT || 5000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const DEFAULT_PLATFORM = process.env.INFERENCE_PLATFORM || 'ollama';
+const OLLAMA_BASE_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'phi3_financial';
+const TRITON_BASE_URL = process.env.TRITON_URL || 'http://localhost:8000';
+const TRITON_MODEL = process.env.TRITON_MODEL || 'phi3_financial';
+const CUSTOM_BASE_URL = process.env.CUSTOM_INFERENCE_URL || '';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
-const server = http.createServer((req, res) => {
-  const setCorsHeaders = () => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  };
+const setCorsHeaders = (res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+};
 
-  setCorsHeaders();
+const createErrorResponse = (res, status, error) => {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error }));
+};
+
+const getRequestBody = (req) =>
+  new Promise((resolve, reject) => {
+    let buffer = '';
+    req.on('data', (chunk) => {
+      buffer += chunk.toString();
+    });
+    req.on('end', () => resolve(buffer));
+    req.on('error', reject);
+  });
+
+const normalizePlatform = (platform) => {
+  const normalized = String(platform || DEFAULT_PLATFORM).toLowerCase();
+  if (['backend', 'ollama', 'triton', 'custom', 'openai'].includes(normalized)) {
+    return normalized;
+  }
+  return DEFAULT_PLATFORM;
+};
+
+const extractReply = (payload) => {
+  if (typeof payload === 'string') return payload.trim();
+  if (!payload) return '';
+  return (
+    payload.reply ||
+    payload.message ||
+    payload.answer ||
+    payload.output ||
+    payload.data ||
+    payload.result ||
+    ''
+  ).toString().trim();
+};
+
+const inferWithOpenAI = async (message) => {
+  if (!OPENAI_API_KEY) {
+    return '';
+  }
+
+  const response = await fetch(OPENAI_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'Tu es un assistant utile, clair et poli.' },
+        { role: 'user', content: message },
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('OpenAI error:', response.status, errorText);
+    return '';
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content?.trim() || '';
+};
+
+const inferWithOllama = async (message) => {
+  const response = await fetch(`${OLLAMA_BASE_URL}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      messages: [
+        { role: 'system', content: 'Tu es un assistant financier précis et utile.' },
+        { role: 'user', content: message },
+      ],
+      temperature: 0.2,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Ollama error:', response.status, errorText);
+    return '';
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content?.trim() || '';
+};
+
+const inferWithTriton = async (message) => {
+  const response = await fetch(`${TRITON_BASE_URL}/v2/models/${TRITON_MODEL}/infer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      inputs: [
+        {
+          name: 'TEXT',
+          shape: [1],
+          datatype: 'BYTES',
+          data: [message],
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Triton error:', response.status, errorText);
+    return '';
+  }
+
+  const data = await response.json();
+  if (Array.isArray(data.outputs) && data.outputs.length > 0) {
+    return data.outputs[0]?.data?.[0]?.toString().trim() || '';
+  }
+
+  return extractReply(data);
+};
+
+const inferWithCustom = async (message) => {
+  if (!CUSTOM_BASE_URL) {
+    throw new Error('CUSTOM_INFERENCE_URL n\'est pas configurée.');
+  }
+
+  const response = await fetch(CUSTOM_BASE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Custom inference error:', response.status, errorText);
+    return '';
+  }
+
+  const data = await response.json();
+  return extractReply(data);
+};
+
+const server = http.createServer(async (req, res) => {
+  setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -20,69 +170,46 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.url === '/api/chat' && req.method === 'POST') {
-    let body = '';
+    try {
+      const body = await getRequestBody(req);
+      const parsed = JSON.parse(body || '{}');
+      const message = (parsed.message || '').toString().trim();
+      const platform = normalizePlatform(parsed.platform);
 
-    req.on('data', (chunk) => {
-      body += chunk;
-    });
-
-    req.on('end', async () => {
-      try {
-        const parsed = JSON.parse(body || '{}');
-        const message = (parsed.message || '').toString().trim();
-
-        if (!message) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Le message est vide.' }));
-          return;
-        }
-
-        let reply;
-
-        if (OPENAI_API_KEY) {
-          const openaiResponse = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${OPENAI_API_KEY}`,
-            },
-            body: JSON.stringify({
-              model: 'gpt-3.5-turbo',
-              messages: [
-                { role: 'system', content: 'Tu es un assistant utile, clair et poli.' },
-                { role: 'user', content: message },
-              ],
-              temperature: 0.7,
-              max_tokens: 500,
-            }),
-          });
-
-          if (!openaiResponse.ok) {
-            const errorText = await openaiResponse.text();
-            console.error('OpenAI error:', openaiResponse.status, errorText);
-          } else {
-            const data = await openaiResponse.json();
-            reply = data?.choices?.[0]?.message?.content?.trim();
-          }
-        }
-
-        if (!reply) {
-          reply = `Réponse du backend : ${message}`;
-        }
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ reply }));
-      } catch (error) {
-        console.error('Erreur backend:', error);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Erreur interne du serveur.' }));
+      if (!message) {
+        createErrorResponse(res, 400, 'Le message est vide.');
+        return;
       }
-    });
 
-    req.on('error', () => {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Erreur lors de la lecture de la requête' }));
-    });
+      let reply = '';
+
+      switch (platform) {
+        case 'ollama':
+          reply = await inferWithOllama(message);
+          break;
+        case 'triton':
+          reply = await inferWithTriton(message);
+          break;
+        case 'custom':
+          reply = await inferWithCustom(message);
+          break;
+        case 'openai':
+        case 'backend':
+        default:
+          reply = await inferWithOpenAI(message);
+          break;
+      }
+
+      if (!reply) {
+        reply = `Réponse du backend : ${message}`;
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ reply, platform }));
+    } catch (error) {
+      console.error('Erreur backend :', error);
+      createErrorResponse(res, 500, 'Erreur interne du serveur.');
+    }
 
     return;
   }
@@ -99,7 +226,11 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Backend démarré sur http://localhost:${PORT}`);
+  console.log(`Plateforme d\'inférence par défaut : ${DEFAULT_PLATFORM}`);
   if (!OPENAI_API_KEY) {
     console.log('OPENAI_API_KEY non configurée : fallback local activé.');
+  }
+  if (!CUSTOM_BASE_URL) {
+    console.log('CUSTOM_INFERENCE_URL non configurée.');
   }
 });

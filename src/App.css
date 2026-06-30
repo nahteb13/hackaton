@@ -295,6 +295,38 @@
   margin: 0 auto;
 }
 
+.chatbot-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1000px;
+  margin: 0 auto 16px;
+}
+
+.chatbot-controls label {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.chatbot-select {
+  min-width: 180px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  padding: 12px 14px;
+  font-size: 1rem;
+}
+
+.chatbot-hint {
+  max-width: 1000px;
+  margin: 0 auto 12px;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
 .chatbot-input {
   flex: 1;
   min-width: 0;
