@@ -2,11 +2,13 @@ import http from 'node:http';
 
 const PORT = process.env.PORT || 5000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const DEFAULT_PLATFORM = process.env.INFERENCE_PLATFORM || 'ollama';
+const DEFAULT_PLATFORM = process.env.INFERENCE_PLATFORM || 'lmstudio';
 const OLLAMA_BASE_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'phi3_financial';
 const TRITON_BASE_URL = process.env.TRITON_URL || 'http://localhost:8000';
 const TRITON_MODEL = process.env.TRITON_MODEL || 'phi3_financial';
+const LMSTUDIO_BASE_URL = process.env.LMSTUDIO_URL || 'http://127.0.0.1:1234';
+const LMSTUDIO_MODEL = process.env.LMSTUDIO_MODEL || 'phi-3.5-mini-instruct';
 const CUSTOM_BASE_URL = process.env.CUSTOM_INFERENCE_URL || '';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
@@ -33,7 +35,7 @@ const getRequestBody = (req) =>
 
 const normalizePlatform = (platform) => {
   const normalized = String(platform || DEFAULT_PLATFORM).toLowerCase();
-  if (['backend', 'ollama', 'triton', 'custom', 'openai'].includes(normalized)) {
+  if (['backend', 'ollama', 'triton', 'lmstudio', 'custom', 'openai'].includes(normalized)) {
     return normalized;
   }
   return DEFAULT_PLATFORM;
@@ -139,6 +141,30 @@ const inferWithTriton = async (message) => {
   return extractReply(data);
 };
 
+const inferWithLMStudio = async (message) => {
+  const response = await fetch(`${LMSTUDIO_BASE_URL}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: LMSTUDIO_MODEL,
+      messages: [
+        { role: 'system', content: 'Tu es un assistant financier clair et utile.' },
+        { role: 'user', content: message },
+      ],
+      temperature: 0.2,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('LM Studio error:', response.status, errorText);
+    return '';
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content?.trim() || extractReply(data);
+};
+
 const inferWithCustom = async (message) => {
   if (!CUSTOM_BASE_URL) {
     throw new Error('CUSTOM_INFERENCE_URL n\'est pas configurée.');
@@ -190,6 +216,9 @@ const server = http.createServer(async (req, res) => {
         case 'triton':
           reply = await inferWithTriton(message);
           break;
+        case 'lmstudio':
+          reply = await inferWithLMStudio(message);
+          break;
         case 'custom':
           reply = await inferWithCustom(message);
           break;
@@ -227,6 +256,8 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Backend démarré sur http://localhost:${PORT}`);
   console.log(`Plateforme d\'inférence par défaut : ${DEFAULT_PLATFORM}`);
+  console.log(`LM Studio URL : ${LMSTUDIO_BASE_URL}`);
+  console.log(`LM Studio modèle : ${LMSTUDIO_MODEL}`);
   if (!OPENAI_API_KEY) {
     console.log('OPENAI_API_KEY non configurée : fallback local activé.');
   }

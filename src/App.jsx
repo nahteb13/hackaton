@@ -2,15 +2,18 @@ import './App.css'
 import { useState } from 'react'
 import OllamaChatbot from './ollama_server/Chatbot'
 import TritonChatbot from './tritton_server/Chatbot'
+import LMStudioChatbot from './lmstudio_server/Chatbot'
 
 const SERVER_CHOICES = [
+  { value: 'lmstudio', label: 'LM Studio' },
   { value: 'ollama', label: 'Ollama' },
   { value: 'triton', label: 'Triton' },
 ]
 
 function App() {
-  const [provider, setProvider] = useState('ollama')
-  const ActiveChatbot = provider === 'triton' ? TritonChatbot : OllamaChatbot
+  const [provider, setProvider] = useState('lmstudio')
+  const ActiveChatbot =
+    provider === 'triton' ? TritonChatbot : provider === 'lmstudio' ? LMStudioChatbot : OllamaChatbot
 
   return (
     <div className="app-shell">
