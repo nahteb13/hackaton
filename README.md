@@ -21,6 +21,12 @@ techcorp-ai-chat/
 │   └── models/           # Poids du modèle et adaptateurs financiers
 └── README.md
 ```
+## Présentation de l'équipe
+
+Développement Full-Stack : INSA NAKIB Elamine & BERMOND Ethan
+Data Science & Engineering : YAKOUBI Al Eddine
+Cybersécurité : MIZOURI Rayane
+Intelligence Artificielle : BOUCHARD Corentin & MOLINIERES Damien
 
 ## Installation et Utilisation
 
