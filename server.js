@@ -2,7 +2,7 @@ import http from 'node:http';
 
 const PORT = process.env.PORT || 5000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const DEFAULT_PLATFORM = process.env.INFERENCE_PLATFORM || 'lmstudio';
+const DEFAULT_PLATFORM = process.env.INFERENCE_PLATFORM || 'ollama';
 const OLLAMA_BASE_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'phi3_financial';
 const TRITON_BASE_URL = process.env.TRITON_URL || 'http://localhost:8000';
@@ -88,16 +88,18 @@ const inferWithOpenAI = async (message) => {
 };
 
 const inferWithOllama = async (message) => {
-  const response = await fetch(`${OLLAMA_BASE_URL}/v1/chat/completions`, {
+  // 1. On tape sur l'endpoint natif d'Ollama
+  const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OLLAMA_MODEL,
+      model: OLLAMA_MODEL, // Utilise 'phi3_financial'
       messages: [
         { role: 'system', content: 'Tu es un assistant financier précis et utile.' },
         { role: 'user', content: message },
       ],
-      temperature: 0.2,
+      stream: false, // Bloque la réponse pour tout recevoir d'un coup
+      temperature: 0.2, // Reste factuel
     }),
   });
 
@@ -108,7 +110,8 @@ const inferWithOllama = async (message) => {
   }
 
   const data = await response.json();
-  return data?.choices?.[0]?.message?.content?.trim() || '';
+  // 2. On extrait le texte selon le format natif d'Ollama
+  return data?.message?.content?.trim() || '';
 };
 
 const inferWithTriton = async (message) => {
