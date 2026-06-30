@@ -1,7 +1,7 @@
 # TechCorp AI Chat — Assistant Financier Spécialisé
 
 ## Objectif
-Déploiement d'une interface web de chat connectée à un modèle d'IA spécialisé en finance (**phi3.5:3.8b-Financial**) via le serveur d'inférence **Ollama**.
+Déploiement d'une interface web de chat connectée à un modèle d'IA spécialisé en finance (**phi3.5:Financial**) via le serveur d'inférence **Ollama**.
 
 Le frontend React interroge un backend Node.js (`server.js`) qui communique avec Ollama (`http://localhost:11434`).
 
@@ -38,14 +38,14 @@ cp .env.example .env
 
 Vérifiez que le `.env` contient :
 - `OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=phi3.5:3.8b`
+OLLAMA_MODEL=phi3.5`
 
 ### 2. Configurer le modèle spécialisé
 
 Dans le dossier `src/ollama_server/`, créez le modèle personnalisé TechCorp :
 
 ```bash
-ollama create phi3.5:3.8b -f Modelfile
+ollama create phi3.5 -f Modelfile
 ```
 
 ### 3. Lancer le backend
@@ -67,7 +67,7 @@ Ouvrez ensuite `http://localhost:5173` pour interagir avec l'assistant.
 
 ## Fonctionnalités Clés
 
-- **Modèle Spécialisé** : Utilise `phi3.5:3.8b` boosté par des instructions financières spécifiques.
+- **Modèle Spécialisé** : Utilise `phi3.5` boosté par des instructions financières spécifiques.
 - **Réglage de Température** : Slider intégré dans l'UI pour ajuster la créativité du modèle (0.2 recommandé pour la précision financière).
 - **Validation métier** : Corrections automatiques des termes techniques (ex: Mortgage -> Hypothécaire).
 
@@ -75,7 +75,7 @@ Ouvrez ensuite `http://localhost:5173` pour interagir avec l'assistant.
 
 ## Validation du fonctionnement
 
-- **Vérification Ollama** : `ollama list` doit afficher `phi3.5:3.8b`.
+- **Vérification Ollama** : `ollama list` doit afficher `phi3.5`.
 - **Vérification Backend** : Le log doit indiquer `Ollama tourne sur l'adresse: http://localhost:11434`.
 - **Vérification Chat** : Les réponses dans l'interface doivent porter le suffixe `(ollama)`.
 

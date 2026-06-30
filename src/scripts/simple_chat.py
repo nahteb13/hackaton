@@ -10,7 +10,7 @@ from peft import PeftModel
 import os
 
 class SimpleChat:
-    def __init__(self, model_path="../models/phi3.5_3.8b"):
+    def __init__(self, model_path="../models/phi3.5"):
         self.model_path = model_path
         self.base_model_name = "microsoft/Phi-3-mini-4k-instruct" 
         self.tokenizer = None
