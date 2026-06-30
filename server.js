@@ -56,7 +56,7 @@ const extractReply = (payload) => {
   ).toString().trim();
 };
 
-const inferWithOpenAI = async (message) => {
+const inferWithOpenAI = async (message, temperature = 0.7) => {
   if (!OPENAI_API_KEY) {
     return '';
   }
@@ -73,7 +73,7 @@ const inferWithOpenAI = async (message) => {
         { role: 'system', content: 'Tu es un assistant utile, clair et poli.' },
         { role: 'user', content: message },
       ],
-      temperature: 0.7,
+      temperature: parseFloat(temperature),
       max_tokens: 500,
     }),
   });
@@ -88,7 +88,7 @@ const inferWithOpenAI = async (message) => {
   return data?.choices?.[0]?.message?.content?.trim() || '';
 };
 
-const inferWithOllama = async (message) => {
+const inferWithOllama = async (message, temperature = 0.2) => {
   // 1. On tape sur l'endpoint natif d'Ollama
   const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
     method: 'POST',
@@ -100,7 +100,9 @@ const inferWithOllama = async (message) => {
         { role: 'user', content: message },
       ],
       stream: false, // Bloque la réponse pour tout recevoir d'un coup
-      temperature: 0.2, // Reste factuel
+      options: {
+        temperature: parseFloat(temperature), // Reste factuel par défaut
+      },
     }),
   });
 
@@ -145,7 +147,7 @@ const inferWithTriton = async (message) => {
   return extractReply(data);
 };
 
-const inferWithLMStudio = async (message) => {
+const inferWithLMStudio = async (message, temperature = 0.2) => {
   const response = await fetch(`${LMSTUDIO_BASE_URL}/v1/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -155,7 +157,7 @@ const inferWithLMStudio = async (message) => {
         { role: 'system', content: 'Tu es un assistant financier clair et utile.' },
         { role: 'user', content: message },
       ],
-      temperature: 0.2,
+      temperature: parseFloat(temperature),
     }),
   });
 
@@ -205,6 +207,7 @@ const server = http.createServer(async (req, res) => {
       const parsed = JSON.parse(body || '{}');
       const message = (parsed.message || '').toString().trim();
       const platform = normalizePlatform(parsed.platform);
+      const temperature = parsed.temperature !== undefined ? parsed.temperature : 0.7;
 
       if (!message) {
         createErrorResponse(res, 400, 'Le message est vide.');
@@ -215,13 +218,13 @@ const server = http.createServer(async (req, res) => {
 
       switch (platform) {
         case 'ollama':
-          reply = await inferWithOllama(message);
+          reply = await inferWithOllama(message, temperature);
           break;
         case 'triton':
           reply = await inferWithTriton(message);
           break;
         case 'lmstudio':
-          reply = await inferWithLMStudio(message);
+          reply = await inferWithLMStudio(message, temperature);
           break;
         case 'custom':
           reply = await inferWithCustom(message);
@@ -229,7 +232,7 @@ const server = http.createServer(async (req, res) => {
         case 'openai':
         case 'backend':
         default:
-          reply = await inferWithOpenAI(message);
+          reply = await inferWithOpenAI(message, temperature);
           break;
       }
 
@@ -278,14 +281,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Backend démarré sur http://localhost:${PORT}`);
-  console.log(`Plateforme d\'inférence par défaut : ${DEFAULT_PLATFORM}`);
-  console.log(`LM Studio URL : ${LMSTUDIO_BASE_URL}`);
-  console.log(`LM Studio modèle : ${LMSTUDIO_MODEL}`);
-  if (!OPENAI_API_KEY) {
-    console.log('OPENAI_API_KEY non configurée : fallback local activé.');
-  }
-  if (!CUSTOM_BASE_URL) {
-    console.log('CUSTOM_INFERENCE_URL non configurée.');
-  }
+  console.log(`Ollama tourne sur l'adresse: ${OLLAMA_BASE_URL}`);
 });

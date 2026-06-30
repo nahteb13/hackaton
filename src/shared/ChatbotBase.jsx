@@ -15,6 +15,7 @@ export default function ChatbotBase({
     },
   ]);
   const [input, setInput] = useState('');
+  const [temperature, setTemperature] = useState(0.2);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -48,7 +49,7 @@ export default function ChatbotBase({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userMessage.text, platform }),
+        body: JSON.stringify({ message: userMessage.text, platform, temperature }),
       });
 
       if (!response.ok) {
@@ -117,7 +118,21 @@ export default function ChatbotBase({
       </main>
 
       <footer className="chatbot-footer">
-        <div className="chatbot-hint">Serveur d'inférence : {platformLabel}</div>
+        <div className="chatbot-controls">
+          <div className="chatbot-hint">Serveur d'inférence : {platformLabel}</div>
+          <div className="chatbot-temperature">
+            <label htmlFor="temp-slider">Température : {temperature}</label>
+            <input
+              id="temp-slider"
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={temperature}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+            />
+          </div>
+        </div>
         <form onSubmit={handleSubmit} className="chatbot-form">
           <input
             type="text"
